@@ -11,4 +11,6 @@ import lombok.NoArgsConstructor;
 public class EventMessage {
     private String id;
     private String type;
+    /** Heartbeat interval in seconds (default 60). Used by workflows to emit heartbeat spans. */
+    private Integer heartbeatIntervalSeconds;
 }

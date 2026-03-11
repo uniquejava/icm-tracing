@@ -1,23 +1,33 @@
 ## Environment
-- java 25
-- maven 3.9.x
-- temporal version 1.5.1 (Server 1.29.1, UI 2.42.1
 
-check screenshots directory for known issues.
+- Java 21
+- Maven 3.9.x
+- Spring Boot 3.5.x
+- Temporal (Server 1.29.1, UI 2.42.1)
+
+Check the `screenshots` directory for known issues.
+
+## Tracing
+
+- **OpenTelemetry**: The app exports traces via OTLP (gRPC) to the collector. HTTP server spans include `http.request.method` and `http.route` (OpenTelemetry semantic conventions).
+- **Heartbeat spans**: Only **MainWorkflow** emits heartbeat spans. They appear as `heartbeat` children of `RunWorkflow:MainWorkflow`. The collector filters out Temporal’s `StartActivity:RecordHeartbeat` and `RunActivity:RecordHeartbeat` spans so only these custom heartbeats are shown. See [HEARTBEAT.md](HEARTBEAT.md) for details.
+- **Collector** (`otel-collector.yml`): Receives OTLP, runs a filter (drops Temporal heartbeat activity spans), batches, and exports to Jaeger and New Relic.
 
 ## Up & Running
 
 ```shell
-# keys
+# Keys (required for New Relic export)
 export NR_ENDPOINT=https://otlp.nr-data.net:4317
-export MY_NEW_RELIC_API_KEY=91xxxxxxxFFFFNRAL
+export MY_NEW_RELIC_API_KEY=your_api_key
 
-# start temporal server, otel collector and jaeger
+# Start Temporal server, OTel collector, and Jaeger
 ./scripts/startup.sh
 
-# run app (Or start from your IDE)
+# Run the app (or start from your IDE)
 mvn clean spring-boot:run
 
-# trigger workflow
+# Trigger a workflow
 ./scripts/01normal.sh
 ```
+
+Traces are visible in Jaeger (http://localhost:16686) and, when configured, in New Relic.

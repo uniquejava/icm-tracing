@@ -5,6 +5,8 @@ spring:
     namespace: default
     connection:
       target: ${TEMPORAL_ADDRESS:127.0.0.1:7233}
+    heartbeat:
+      interval-seconds: 60
     workers-auto-discovery:
       packages:
         - click.yinsb.icmtracing.temporal.workflow

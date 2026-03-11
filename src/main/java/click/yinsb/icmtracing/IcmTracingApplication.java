@@ -9,7 +9,7 @@ import org.springframework.web.client.RestTemplate;
 @SpringBootApplication
 public class IcmTracingApplication {
 
-    static void main(String[] args) {
+    public static void main(String[] args) {
         SpringApplication.run(IcmTracingApplication.class, args);
     }
 

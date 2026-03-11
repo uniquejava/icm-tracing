@@ -11,27 +11,26 @@ import org.slf4j.Logger;
 
 import java.time.Duration;
 
-@WorkflowImpl(taskQueues = { Constants.ICM_TASK_QUEUE })
+@WorkflowImpl(taskQueues = {Constants.ICM_TASK_QUEUE})
 public class ChildWorkflow001Impl implements ChildWorkflow001 {
 
 	private final Logger log = Workflow.getLogger(ChildWorkflow001.class.getName());
 
-	// Create an activity stub
 	private final Activity001 activity1 = Workflow.newActivityStub(Activity001.class,
 			ActivityOptions.newBuilder()
-					.setRetryOptions(
-							RetryOptions.newBuilder()
-									.setMaximumAttempts(8)
-									.setInitialInterval(Duration.ofSeconds(2))
-									.build()
-					)
-					.setStartToCloseTimeout(Duration.ofMinutes(2)).build());
+					.setStartToCloseTimeout(Duration.ofMinutes(5))
+					.setScheduleToCloseTimeout(Duration.ofMinutes(120))
+					.setRetryOptions(RetryOptions.newBuilder()
+										.setInitialInterval(Duration.ofSeconds(60))
+										.setMaximumInterval(Duration.ofMinutes(5))
+										.setBackoffCoefficient(2)
+										.setMaximumAttempts(5)
+										.build())
+					.build());
 
 	@Override
 	public void run(EventMessage eventMessage) {
 		log.info("run child workflow 001");
-
 		activity1.runActivity(eventMessage);
 	}
-
 }

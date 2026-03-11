@@ -7,7 +7,7 @@ import io.temporal.client.WorkflowClient;
 import io.temporal.client.WorkflowOptions;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
@@ -19,9 +19,15 @@ public class WorkflowClientService {
 
     private final WorkflowClient client;
 
+    @Value("${spring.temporal.heartbeat.interval-seconds:60}")
+    private int heartbeatIntervalSeconds;
+
     public void start(EventMessage eventMessage) {
         try {
             log.info("starting workflow");
+            if (eventMessage.getHeartbeatIntervalSeconds() == null) {
+                eventMessage.setHeartbeatIntervalSeconds(heartbeatIntervalSeconds);
+            }
             String workflowId = UUID.randomUUID().toString();
 
             WorkflowOptions options = WorkflowOptions.newBuilder().setTaskQueue(Constants.ICM_TASK_QUEUE)
