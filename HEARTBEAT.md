@@ -6,7 +6,7 @@ This document describes the heartbeat span feature: why it exists, how it works,
 
 The app emits **heartbeat** spans only as **children** of `RunWorkflow:MainWorkflow`. The child workflow (`RunWorkflow:ChildWorkflow001`) does not emit heartbeats.
 
-A heartbeat span is created on a fixed interval (default 60 seconds) while the workflow is running. That gives observability tools (e.g. New Relic, Jaeger) a signal that the workflow is still active, which is especially useful for long-running workflows that would otherwise show little or no activity in a trace.
+A heartbeat span is created every 60 seconds while the workflow is running. That gives observability tools (e.g. New Relic, Jaeger) a signal that the workflow is still active, which is especially useful for long-running workflows that would otherwise show little or no activity in a trace.
 
 ## How It Works
 
@@ -14,7 +14,7 @@ A heartbeat span is created on a fixed interval (default 60 seconds) while the w
 
 1. When a workflow runs, it captures its own OpenTelemetry span context (trace ID and span ID) once via `Workflow.sideEffect()`. That context corresponds to the `RunWorkflow:…` span created by Temporal.
 2. The workflow runs its main work (child workflow or activity) and a **timer loop** in parallel.
-3. Every N seconds, the timer fires and the workflow calls a **heartbeat activity**, passing the captured trace ID and span ID.
+3. Every 60 seconds, the timer fires and the workflow calls a **heartbeat activity**, passing the captured trace ID and span ID.
 4. The activity creates a new span named `"heartbeat"` with that context as its **parent**, then ends the span immediately. The span is exported via OTLP like any other span.
 5. The loop stops when the main work completes; the workflow then finishes.
 
@@ -37,23 +37,7 @@ RunWorkflow:MainWorkflow
 
 ## Configuration
 
-| What | Where | Default |
-|------|--------|---------|
-| Heartbeat interval | `spring.temporal.heartbeat.interval-seconds` in `application.yaml` | 60 seconds |
-| Per-run override | `EventMessage.heartbeatIntervalSeconds` (set by client or caller) | Uses config value if null |
-
-The **WorkflowClientService** reads `spring.temporal.heartbeat.interval-seconds` and, when starting a workflow, sets `eventMessage.heartbeatIntervalSeconds` if it is not already set. Workflows use that value (or 60 if still null) for their timer loop.
-
-Example in `application.yaml`:
-
-```yaml
-spring:
-  temporal:
-    heartbeat:
-      interval-seconds: 60
-```
-
-Change `60` to any positive number of seconds to make heartbeats more or less frequent.
+The heartbeat interval is fixed at 60 seconds in `WorkflowHeartbeatSupport`. It is intentionally not exposed as runtime configuration because this workaround needs to stay comfortably below New Relic's 90-second gap threshold.
 
 ## OTel Collector: Dropping Temporal Activity Spans
 
@@ -86,12 +70,12 @@ This processor is included in both trace pipelines (`traces/jaeger` and `traces/
 |-----------|-------------|
 | **HeartbeatActivity** | Interface with `recordHeartbeat(String traceId, String spanId)`. |
 | **HeartbeatActivityImpl** | Implements the activity: builds an OTel `SpanContext` from the IDs, starts a span named `"heartbeat"` with that as parent, then ends it. Registered on the same task queue as other activities. |
-| **EventMessage.heartbeatIntervalSeconds** | Optional integer; carries the interval (seconds) from the client into the workflows. |
-| **MainWorkflowImpl** | Starts the child workflow and a parallel loop that calls the heartbeat activity every N seconds until the child completes. |
+| **WorkflowHeartbeatSupport** | Reusable workflow-side helper that resolves the interval, captures the workflow span context, starts the heartbeat loop, and waits for the main work to complete. |
+| **MainWorkflowImpl** | Starts the child workflow by delegating heartbeat orchestration to `WorkflowHeartbeatSupport`, so the workflow only contains business logic. |
 | **ChildWorkflow001Impl** | Runs the main activity only; it does not emit heartbeat spans. |
 
 ## Edge Cases
 
 - **Missing span context**: If the workflow thread does not have OpenTelemetry context (e.g. no Temporal OTel interceptor), the side effect returns empty trace/span IDs. The activity then skips creating a span and logs at debug level.
-- **Short workflows**: If the workflow finishes before the first interval, no heartbeat span is emitted for that run.
+- **Short workflows**: If the workflow finishes before the first 60-second interval, no heartbeat span is emitted for that run.
 - **Failures**: If the heartbeat activity fails to create a span (e.g. invalid IDs), it logs a warning and does not fail the workflow.
