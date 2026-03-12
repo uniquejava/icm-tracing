@@ -26,6 +26,9 @@ import java.util.Set;
 @Configuration
 public class NrOtelConfig {
 
+    // The custom heartbeat span exists only to prevent New Relic from splitting one long-running Temporal
+    // workflow into multiple trace groups after a quiet period. Filter the Temporal RecordHeartbeat activity
+    // spans so reviewers see the intended heartbeat span once, not duplicated by Temporal activity spans.
     private static final Set<String> FILTERED_SPAN_NAMES = Set.of(
             "StartActivity:RecordHeartbeat",
             "RunActivity:RecordHeartbeat"

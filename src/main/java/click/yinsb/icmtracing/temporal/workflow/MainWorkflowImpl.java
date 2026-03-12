@@ -11,10 +11,14 @@ public class MainWorkflowImpl implements MainWorkflow {
 
 	@Override
 	public void runAsync(EventMessage eventMessage) {
-		WorkflowHeartbeatSupport.runWithHeartbeat(
-				() -> {
-					ChildWorkflow001 stub1 = Workflow.newChildWorkflowStub(ChildWorkflow001.class);
-					stub1.run(eventMessage);
-				});
+		WorkflowHeartbeatSupport.runWithHeartbeat(() -> runMainFlow(eventMessage));
+	}
+
+	private void runMainFlow(EventMessage eventMessage) {
+		// create Workflow Stubs
+		ChildWorkflow001 stub1 = Workflow.newChildWorkflowStub(ChildWorkflow001.class);
+
+		// start workflows
+		stub1.run(eventMessage);
 	}
 }

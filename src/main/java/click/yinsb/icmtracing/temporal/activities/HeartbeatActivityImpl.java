@@ -17,6 +17,10 @@ import org.springframework.stereotype.Component;
  * Emits a "heartbeat" span as a child of the workflow span so the trace shows
  * periodic activity. Temporal's StartActivity:RecordHeartbeat spans are filtered
  * out in the collector so only these custom heartbeat spans appear.
+ *
+ * This exists because the default Temporal spans alone may leave a long quiet period between retries,
+ * awaits, or external approvals. When that quiet period exceeds New Relic's grouping threshold,
+ * the later spans can be shown in a separate trace group.
  */
 @Component
 @Slf4j

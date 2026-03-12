@@ -13,6 +13,10 @@ import java.time.Duration;
 
 /**
  * Reusable workflow-side support for emitting heartbeat spans while long-running work is in progress.
+ *
+ * The reason for this helper is New Relic trace grouping behavior: if more than about 90 seconds pass
+ * without a new span, later spans can appear in a different trace group even when the trace ID stays the same.
+ * We use a lightweight heartbeat span to keep long-running Temporal workflows visible as one continuous trace.
  */
 public final class WorkflowHeartbeatSupport {
 
@@ -23,6 +27,7 @@ public final class WorkflowHeartbeatSupport {
     }
 
     public static void runWithHeartbeat(Functions.Proc mainWork) {
+        // Keep the main workflow trace active during long waits such as retries, sleeps, or signal/approval waits.
         HeartbeatParentSpan parentSpan = captureParentSpan();
         HeartbeatActivity heartbeatActivity = newHeartbeatActivity();
 
