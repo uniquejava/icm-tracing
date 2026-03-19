@@ -33,8 +33,8 @@ public final class WorkflowHeartbeatSupport {
 
         Promise<Void> workPromise = Async.procedure(mainWork);
         while (true) {
-            Workflow.sleep(HEARTBEAT_INTERVAL);
-            if (workPromise.isCompleted()) {
+            boolean completed = Workflow.await(HEARTBEAT_INTERVAL, workPromise::isCompleted);
+            if (completed) {
                 break;
             }
             heartbeatActivity.recordHeartbeat(parentSpan.traceId(), parentSpan.spanId());
