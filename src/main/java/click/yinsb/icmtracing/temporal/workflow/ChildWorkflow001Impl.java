@@ -16,6 +16,9 @@ public class ChildWorkflow001Impl implements ChildWorkflow001 {
 
 	private final Logger log = Workflow.getLogger(ChildWorkflow001.class.getName());
 
+	/** Flag indicating whether an external response has been received */
+	private boolean externalResponseReceived = false;
+
 	private final Activity001 activity1 = Workflow.newActivityStub(Activity001.class,
 			ActivityOptions.newBuilder()
 					.setStartToCloseTimeout(Duration.ofMinutes(5))
@@ -32,5 +35,14 @@ public class ChildWorkflow001Impl implements ChildWorkflow001 {
 	public void run(EventMessage eventMessage) {
 		log.info("run child workflow 001");
 		activity1.runActivity(eventMessage);
+
+		// Wait for external response signal
+		Workflow.await(() -> externalResponseReceived);
+	}
+
+	@Override
+	public void receiveExternalResponse(String workflowId) {
+		log.info("resume {}", workflowId);
+		this.externalResponseReceived = true;
 	}
 }

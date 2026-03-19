@@ -3,9 +3,7 @@ package click.yinsb.icmtracing;
 import click.yinsb.icmtracing.temporal.client.WorkflowClientService;
 import click.yinsb.icmtracing.temporal.model.EventMessage;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RequestMapping
 @RestController
@@ -16,5 +14,10 @@ public class HelloController {
     @PostMapping("/hello")
     public void hello(EventMessage eventMessage) {
         workflowClientService.start(eventMessage);
+    }
+
+    @GetMapping("/approve")
+    public void approve(@RequestParam("workflowId") String workflowId) {
+        workflowClientService.approve(workflowId);
     }
 }

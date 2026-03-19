@@ -19,7 +19,7 @@ public class Activity001Impl implements Activity001 {
     @Override
     public void runActivity(EventMessage eventMessage) {
         log.info("runActivity called");
-        restTemplate.postForObject("http://localhost:8081/run-agent", eventMessage, Object.class);
+        //restTemplate.postForObject("http://localhost:8081/run-agent", eventMessage, Object.class);
     }
 
 }

@@ -20,7 +20,7 @@ import java.time.Duration;
  */
 public final class WorkflowHeartbeatSupport {
 
-    public static final int DEFAULT_HEARTBEAT_INTERVAL_SECONDS = 60;
+    public static final int DEFAULT_HEARTBEAT_INTERVAL_SECONDS = 80;
     private static final Duration HEARTBEAT_INTERVAL = Duration.ofSeconds(DEFAULT_HEARTBEAT_INTERVAL_SECONDS);
 
     private WorkflowHeartbeatSupport() {
