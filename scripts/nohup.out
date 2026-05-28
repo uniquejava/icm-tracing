@@ -1,5 +1,0 @@
-CLI 1.5.1 (Server 1.29.1, UI 2.42.1)
-
-Server:  localhost:7233
-UI:      http://localhost:8088
-Metrics: http://localhost:65129/metrics

@@ -15,8 +15,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StreamUtils;
-import org.springframework.util.StringUtils;
 
 import java.util.UUID;
 
@@ -50,11 +48,14 @@ public class WorkflowClientService {
         }
     }
 
-    public void approve(String childWorkflowId) {
-        Class<?> workflowClass = getWorkflowClass(childWorkflowId);
-        Object stub = client.newWorkflowStub(workflowClass, childWorkflowId);
-        WorkflowStub workflowStub = WorkflowStub.fromTyped(stub);
-        workflowStub.signal("receiveExternalResponse", childWorkflowId);
+    public void approve(String workflowId) {
+        Class<?> workflowClass = getWorkflowClass(workflowId);
+        // If the caller passed the parent workflow ID, route to the child
+        if (workflowClass == MainWorkflow.class) {
+            workflowId = workflowId + "-child-001";
+        }
+        WorkflowStub workflowStub = client.newUntypedWorkflowStub(workflowId);
+        workflowStub.signal("receiveExternalResponse", workflowId);
     }
 
     private Class<?> getWorkflowClass(String childWorkflowId) {

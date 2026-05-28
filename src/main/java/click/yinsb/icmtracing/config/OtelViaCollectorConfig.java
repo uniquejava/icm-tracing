@@ -13,12 +13,14 @@ import io.opentelemetry.sdk.resources.Resource;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
 import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
-public class OtelConfig {
+@Configuration
+public class OtelViaCollectorConfig {
     @Bean
     OpenTelemetry openTelemetry() {
         Resource resource = Resource.getDefault()
-                .merge(Resource.create(Attributes.of(AttributeKey.stringKey("service.name"), "double-confirm")));
+                .merge(Resource.create(Attributes.of(AttributeKey.stringKey("service.name"), "icm-tracing-via-collector")));
 
         SdkTracerProvider tracerProvider = SdkTracerProvider.builder()
                 .setResource(resource)
@@ -29,7 +31,6 @@ public class OtelConfig {
                         .build())
                 .build();
 
-
         return OpenTelemetrySdk.builder()
                 .setTracerProvider(tracerProvider)
                 .setPropagators(ContextPropagators.create(
@@ -39,5 +40,4 @@ public class OtelConfig {
                         )))
                 .build();
     }
-
 }

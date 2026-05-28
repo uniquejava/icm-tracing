@@ -7,9 +7,11 @@ This repository is a Java 21 Maven project built with Spring Boot and Temporal. 
 - `mvn clean spring-boot:run` — build and run the app locally on port `8080`.
 - `mvn clean package` — produce a fresh application build in `target/`.
 - `mvn test` — run the test suite; add tests before relying on this in PRs.
-- `./scripts/startup.sh` — start Temporal dev server, Jaeger, and the OTEL collector.
-- `./scripts/shutdown.sh` — stop the Docker-based local stack.
-- `./scripts/01normal.sh` / `./scripts/02approve.sh <workflowId>` — trigger the demo workflow endpoints.
+- `./scripts/01start-temporal-server.sh` — start Temporal dev server, Jaeger, and the OTEL collector.
+- `./scripts/02start-app.sh` — build and start the Spring Boot app.
+- `./scripts/03trigger-workflow.sh` — trigger the demo workflow.
+- `./scripts/04approve-workflow.sh <workflowId>` — send the approval signal to a waiting workflow.
+- `./scripts/05shutdown.sh` — stop the Docker-based local stack.
 
 ## Coding Style & Naming Conventions
 Follow existing Java style in `src/main/java`: 4-space indentation for Spring app/config classes and the repository’s prevailing style inside Temporal workflow classes. Keep package names lowercase, class names `PascalCase`, methods and fields `camelCase`, and constants `UPPER_SNAKE_CASE`. Prefer focused Spring configuration classes in `config` and keep Temporal types grouped by role (`workflow`, `activities`, `client`, `model`). Use Lombok only where it reduces boilerplate without hiding behavior.

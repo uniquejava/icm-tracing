@@ -4,8 +4,9 @@
 - Maven 3.9.x
 - Spring Boot 3.5.x
 - Temporal (Server 1.29.1, UI 2.42.1)
+- Human in the loop
 
-Check the `screenshots` directory for known issues.
+Check the `docs/screenshots` directory for known issues.
 
 ## Tracing
 
@@ -21,13 +22,13 @@ export NR_ENDPOINT=https://otlp.nr-data.net:4317
 export MY_NEW_RELIC_API_KEY=your_api_key
 
 # Start Temporal server, OTel collector, and Jaeger
-./scripts/startup.sh
+./scripts/01start-temporal-server.sh
 
 # Run the app (or start from your IDE)
 mvn clean spring-boot:run
 
 # Trigger a workflow
-./scripts/01normal.sh
+./scripts/03trigger-workflow.sh
 ```
 
 Traces are visible in Jaeger (http://localhost:16686) and, when configured, in New Relic.
