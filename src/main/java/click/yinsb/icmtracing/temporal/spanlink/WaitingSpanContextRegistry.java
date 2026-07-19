@@ -7,8 +7,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * In-process store of workflow span contexts waiting for HITL / external signals.
- * Written by {@link click.yinsb.icmtracing.temporal.activities.Activity001#rememberWaitingSpan}
- * before {@code Workflow.await}; read by {@link HitlSpanLinkTracer} when signaling.
+ * Written by {@link RememberWaitingSpanActivity} before {@code Workflow.await};
+ * read by {@link HitlSpanLinkTracer} when signaling.
  */
 @Component
 public class WaitingSpanContextRegistry {

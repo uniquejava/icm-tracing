@@ -9,3 +9,4 @@ spring:
       packages:
         - click.yinsb.icmtracing.temporal.workflow
         - click.yinsb.icmtracing.temporal.activities
+        - click.yinsb.icmtracing.temporal.spanlink

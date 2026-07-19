@@ -1,6 +1,5 @@
 package click.yinsb.icmtracing.temporal.spanlink;
 
-import click.yinsb.icmtracing.temporal.activities.Activity001;
 import io.opentelemetry.api.trace.Span;
 import io.temporal.activity.ActivityOptions;
 import io.temporal.common.RetryOptions;
@@ -64,12 +63,12 @@ public final class HitlSpanLinkSupport {
         String workflowId = Workflow.getInfo().getWorkflowId();
         log.info("remembering waiting span context workflowId={} traceId={} spanId={}",
                 workflowId, traceId, spanId);
-        activity001().rememberWaitingSpan(workflowId, traceId, spanId);
+        rememberActivity().remember(workflowId, traceId, spanId);
     }
 
-    private static Activity001 activity001() {
+    private static RememberWaitingSpanActivity rememberActivity() {
         return Workflow.newActivityStub(
-                Activity001.class,
+                RememberWaitingSpanActivity.class,
                 ActivityOptions.newBuilder()
                         .setStartToCloseTimeout(Duration.ofSeconds(30))
                         .setRetryOptions(RetryOptions.newBuilder()
