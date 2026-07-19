@@ -1,6 +1,6 @@
 spring:
   application:
-    name: hitl
+    name: spanlink_hitl
   temporal:
     namespace: default
     connection:

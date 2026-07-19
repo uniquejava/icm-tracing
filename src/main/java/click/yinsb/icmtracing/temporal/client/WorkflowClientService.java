@@ -2,6 +2,7 @@ package click.yinsb.icmtracing.temporal.client;
 
 import click.yinsb.icmtracing.temporal.model.Constants;
 import click.yinsb.icmtracing.temporal.model.EventMessage;
+import click.yinsb.icmtracing.temporal.spanlink.HitlSpanLinkTracer;
 import click.yinsb.icmtracing.temporal.workflow.MainWorkflow;
 import click.yinsb.icmtracing.temporal.workflow.base.WorkflowTypeRegistry;
 import io.temporal.api.common.v1.WorkflowExecution;
@@ -15,8 +16,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StreamUtils;
-import org.springframework.util.StringUtils;
 
 import java.util.UUID;
 
@@ -28,6 +27,7 @@ public class WorkflowClientService {
     private String namespace;
 
     private final WorkflowClient client;
+    private final HitlSpanLinkTracer hitlSpanLinkTracer;
 
     public void start(EventMessage eventMessage) {
         try {
@@ -54,7 +54,9 @@ public class WorkflowClientService {
         Class<?> workflowClass = getWorkflowClass(childWorkflowId);
         Object stub = client.newWorkflowStub(workflowClass, childWorkflowId);
         WorkflowStub workflowStub = WorkflowStub.fromTyped(stub);
-        workflowStub.signal("receiveExternalResponse", childWorkflowId);
+
+        hitlSpanLinkTracer.runLinked(childWorkflowId, "hitl.approve",
+                () -> workflowStub.signal("receiveExternalResponse", childWorkflowId));
     }
 
     private Class<?> getWorkflowClass(String childWorkflowId) {

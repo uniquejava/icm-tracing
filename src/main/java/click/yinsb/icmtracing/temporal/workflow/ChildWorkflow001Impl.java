@@ -3,6 +3,7 @@ package click.yinsb.icmtracing.temporal.workflow;
 import click.yinsb.icmtracing.temporal.activities.Activity001;
 import click.yinsb.icmtracing.temporal.model.Constants;
 import click.yinsb.icmtracing.temporal.model.EventMessage;
+import click.yinsb.icmtracing.temporal.spanlink.HitlSpanLinkSupport;
 import io.temporal.activity.ActivityOptions;
 import io.temporal.common.RetryOptions;
 import io.temporal.spring.boot.WorkflowImpl;
@@ -36,8 +37,8 @@ public class ChildWorkflow001Impl implements ChildWorkflow001 {
 		log.info("run child workflow 001");
 		activity1.runActivity(eventMessage);
 
-		// Wait for external response signal
-		Workflow.await(() -> externalResponseReceived);
+		// Capture workflow span for Span Link, then wait for external approve signal
+		HitlSpanLinkSupport.await(() -> externalResponseReceived);
 	}
 
 	@Override

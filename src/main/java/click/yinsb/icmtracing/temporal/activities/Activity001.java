@@ -9,4 +9,11 @@ public interface Activity001 {
 
 	@ActivityMethod
 	void runActivity(EventMessage eventMessage);
+
+	/**
+	 * Store the waiting workflow span context so an external approve/signal
+	 * can Span-Link back to this workflow trace.
+	 */
+	@ActivityMethod
+	void rememberWaitingSpan(String workflowId, String traceId, String spanId);
 }
