@@ -1,6 +1,6 @@
 spring:
   application:
-    name: heartbeat
+    name: heartbeat_retry
   temporal:
     namespace: default
     connection:
