@@ -1,23 +1,47 @@
-## Environment
-- java 25
-- maven 3.9.x
-- temporal version 1.5.1 (Server 1.29.1, UI 2.42.1
+# icm-tracing (`retry`)
 
-check screenshots directory for known issues.
+Demonstrates **activity retry** shapes in OpenTelemetry traces.
 
-## Up & Running
+## Prerequisites
+
+- Java 25
+- Maven 3.9.x
+- [Temporal CLI](https://docs.temporal.io/cli) (`temporal` on `PATH`)
+- Docker / Docker Compose
+
+check `screenshots/` for known issues.
+
+See the branch overview on [`main`](https://github.com/uniquejava/icm-tracing/tree/main#branches).
+
+## Configure secrets
 
 ```shell
-# keys
-export NR_ENDPOINT=https://otlp.nr-data.net:4317
-export MY_NEW_RELIC_API_KEY=91xxxxxxxFFFFNRAL
+cp .env.example .env
+# edit .env and set MY_NEW_RELIC_API_KEY to your New Relic ingest license key
+```
 
-# start temporal server, otel collector and jaeger
+`.env` is gitignored. Docker Compose loads it automatically for the OTel collector (Jaeger + New Relic export).
+
+## Run locally
+
+```shell
 ./scripts/startup.sh
-
-# run app (Or start from your IDE)
 mvn clean spring-boot:run
 
-# trigger workflow
+# trigger workflow — activity fails against :8081 and retries (more attempts than main)
 ./scripts/01normal.sh
+```
+
+## Where to look
+
+| UI | URL |
+|----|-----|
+| Temporal UI | http://localhost:8088 |
+| Jaeger | http://localhost:16686 |
+| App | http://localhost:8080 |
+
+## Shutdown
+
+```shell
+./scripts/shutdown.sh
 ```
