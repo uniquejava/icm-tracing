@@ -21,7 +21,7 @@ public class ChildWorkflow001Impl implements ChildWorkflow001 {
 			ActivityOptions.newBuilder()
 					.setRetryOptions(
 							RetryOptions.newBuilder()
-									.setMaximumAttempts(8)
+									.setMaximumAttempts(12)
 									.setInitialInterval(Duration.ofSeconds(2))
 									.build()
 					)
