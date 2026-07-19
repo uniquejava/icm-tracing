@@ -32,4 +32,7 @@ build/
 ### VS Code ###
 .vscode/
 nohup.out
+
+### Local / secrets ###
+.DS_Store
 .env

@@ -1,6 +1,6 @@
 spring:
   application:
-    name: icm-tracing
+    name: retry
   temporal:
     namespace: default
     connection:

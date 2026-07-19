@@ -12,15 +12,17 @@ import io.opentelemetry.sdk.OpenTelemetrySdk;
 import io.opentelemetry.sdk.resources.Resource;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
 import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class OtelConfig {
     @Bean
-    OpenTelemetry openTelemetry() {
+    OpenTelemetry openTelemetry(
+            @Value("${spring.application.name}") String applicationName) {
         Resource resource = Resource.getDefault()
-                .merge(Resource.create(Attributes.of(AttributeKey.stringKey("service.name"), "spanlink_retry")));
+                .merge(Resource.create(Attributes.of(AttributeKey.stringKey("service.name"), applicationName)));
 
         SdkTracerProvider tracerProvider = SdkTracerProvider.builder()
                 .setResource(resource)
