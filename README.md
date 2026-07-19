@@ -1,9 +1,15 @@
-## Environment
-- java 25
-- maven 3.9.x
-- temporal version 1.5.1 (Server 1.29.1, UI 2.42.1
+# icm-tracing
 
-check screenshots directory for known issues.
+Temporal + OpenTelemetry tracing demos (local Jaeger and New Relic).
+
+## Prerequisites
+
+- Java 25
+- Maven 3.9.x
+- [Temporal CLI](https://docs.temporal.io/cli) (`temporal` on `PATH`)
+- Docker / Docker Compose
+
+check `screenshots/` for known issues.
 
 ## Branches
 
@@ -26,19 +32,39 @@ main ──► retry                         (retries)
          └──► heartbeat_hitl / heartbeat_retry  (approval → + heartbeat)
 ```
 
-## Up & Running
+## Configure secrets
 
 ```shell
-# keys
-export NR_ENDPOINT=https://otlp.nr-data.net:4317
-export MY_NEW_RELIC_API_KEY=91xxxxxxxFFFFNRAL
+cp .env.example .env
+# edit .env and set MY_NEW_RELIC_API_KEY to your New Relic ingest license key
+```
 
-# start temporal server, otel collector and jaeger
+`.env` is gitignored. Docker Compose loads it automatically for the OTel collector (Jaeger + New Relic export).
+
+## Run locally (this branch: `main`)
+
+```shell
+# 1) infra: Temporal dev server + OTel collector + Jaeger
 ./scripts/startup.sh
 
-# run app (Or start from your IDE)
+# 2) app
 mvn clean spring-boot:run
 
-# trigger workflow
+# 3) trigger a workflow (activity calls a failing :8081 endpoint → retries)
 ./scripts/01normal.sh
+```
+
+## Where to look
+
+| UI | URL |
+|----|-----|
+| Temporal UI | http://localhost:8088 |
+| Jaeger | http://localhost:16686 |
+| App | http://localhost:8080 |
+
+## Shutdown
+
+```shell
+./scripts/shutdown.sh
+# also stop the Temporal dev server if still running (e.g. kill the nohup process)
 ```
