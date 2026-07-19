@@ -1,6 +1,6 @@
 spring:
   application:
-    name: icm-tracing
+    name: main
   temporal:
     namespace: default
     connection:
