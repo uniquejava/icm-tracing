@@ -9,9 +9,8 @@ Check the `screenshots` directory for known issues.
 
 ## Tracing
 
-- **OpenTelemetry**: The app exports traces via OTLP (gRPC) to the collector. HTTP server spans include `http.request.method` and `http.route` (OpenTelemetry semantic conventions).
-- **Heartbeat spans**: Only **MainWorkflow** emits heartbeat spans. They appear as `heartbeat` children of `RunWorkflow:MainWorkflow`. The collector filters out Temporal’s `StartActivity:RecordHeartbeat` and `RunActivity:RecordHeartbeat` spans so only these custom heartbeats are shown. See [HEARTBEAT.md](HEARTBEAT.md) for details.
-- **Collector** (`otel-collector.yml`): Receives OTLP, runs a filter (drops Temporal heartbeat activity spans), batches, and exports to Jaeger and New Relic.
+- **OpenTelemetry**: The app exports traces via OTLP (gRPC) to New Relic (and optionally via the collector to Jaeger). HTTP server spans include `http.request.method` and `http.route` (OpenTelemetry semantic conventions).
+- **Collector** (`otel-collector.yml`): Receives OTLP, batches, and exports to Jaeger and New Relic.
 
 ## Up & Running
 

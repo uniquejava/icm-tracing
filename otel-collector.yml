@@ -19,22 +19,15 @@ exporters:
     verbosity: normal
 
 processors:
-  filter/drop_temporal_heartbeat_activity:
-    error_mode: ignore
-    traces:
-      span:
-        # Drop Temporal's StartActivity:RecordHeartbea and RunActivity:RecordHeartbeat so only custom "heartbeat" spans appear
-        - 'name == "StartActivity:RecordHeartbeat"'
-        - 'name == "RunActivity:RecordHeartbeat"'
   batch: {}
 
 service:
   pipelines:
     traces/jaeger:
       receivers: [otlp]
-      processors: [filter/drop_temporal_heartbeat_activity, batch]
+      processors: [batch]
       exporters: [otlp/jaeger]
     traces/nr:
       receivers: [otlp]
-      processors: [filter/drop_temporal_heartbeat_activity, batch]
+      processors: [batch]
       exporters: [otlp/newrelic, debug]

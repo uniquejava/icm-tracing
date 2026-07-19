@@ -2,9 +2,7 @@ package click.yinsb.icmtracing.temporal.workflow;
 
 import click.yinsb.icmtracing.temporal.model.Constants;
 import click.yinsb.icmtracing.temporal.model.EventMessage;
-import click.yinsb.icmtracing.temporal.workflow.support.WorkflowHeartbeatSupport;
 import io.temporal.spring.boot.WorkflowImpl;
-import io.temporal.workflow.Async;
 import io.temporal.workflow.ChildWorkflowOptions;
 import io.temporal.workflow.Workflow;
 import lombok.extern.slf4j.Slf4j;
@@ -15,8 +13,7 @@ public class MainWorkflowImpl implements MainWorkflow {
 
 	@Override
 	public void runAsync(EventMessage eventMessage) {
-		WorkflowHeartbeatSupport.runWithHeartbeat(() -> runMainFlow(eventMessage));
-		// runMainFlow(eventMessage);
+		runMainFlow(eventMessage);
 	}
 
 	private void runMainFlow(EventMessage eventMessage) {
@@ -32,9 +29,6 @@ public class MainWorkflowImpl implements MainWorkflow {
 		log.info("child workflow id: {}", childWorkflowId);
 
 		ChildWorkflow001 stub1 = Workflow.newChildWorkflowStub(ChildWorkflow001.class, options);
-		// async call
-		// Async.procedure(stub1::run, eventMessage);
-
 		// sync call
 		stub1.run(eventMessage);
 	}
