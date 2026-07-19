@@ -24,7 +24,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
-// To switch to direct NR export: add @Configuration here and remove it from OtelViaCollectorConfig.
+// To switch to direct NR export: add @Configuration here and remove it from OtelConfig.
 public class NewRelicDirectOtelConfig {
 
     private static final Logger log = LoggerFactory.getLogger(NewRelicDirectOtelConfig.class);

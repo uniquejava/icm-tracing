@@ -1,6 +1,6 @@
 spring:
   application:
-    name: icm-tracing
+    name: heartbeat
   temporal:
     namespace: default
     connection:
