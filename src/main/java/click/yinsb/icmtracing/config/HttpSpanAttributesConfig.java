@@ -16,7 +16,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  * Ensures HTTP server spans include OpenTelemetry semantic convention attributes:
  * <ul>
  *   <li>{@code http.request.method} – HTTP method (e.g. GET, POST)</li>
- *   <li>{@code http.route} – Matched route template (e.g. /hello, /users/{id})</li>
+ *   <li>{@code http.route} – Matched route template (e.g. /request, /users/{id})</li>
  * </ul>
  *
  * @see <a href="https://opentelemetry.io/docs/specs/semconv/http/http-spans/">HTTP spans semantic conventions</a>
