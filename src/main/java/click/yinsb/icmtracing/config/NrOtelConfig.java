@@ -17,13 +17,12 @@ import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
 import io.opentelemetry.sdk.trace.export.SpanExporter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
-@Configuration
+// Unused: collector path uses OtelConfig. Add @Configuration here and remove it from OtelConfig to switch.
 public class NrOtelConfig {
 
     // The custom heartbeat span exists only to prevent New Relic from splitting one long-running Temporal

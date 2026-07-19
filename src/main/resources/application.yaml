@@ -1,6 +1,6 @@
 spring:
   application:
-    name: icm-tracing
+    name: human-in-the-loop
   temporal:
     namespace: default
     connection:
