@@ -15,7 +15,7 @@ See the branch overview on [`main`](https://github.com/uniquejava/icm-tracing/tr
 
 ## Tracing
 
-- HITL signal wait + `GET /approve`.
+- HITL signal wait + `POST /approve`.
 - Approve path creates a linked `hitl.approve` span (see `temporal/spanlink/`).
 - Collector exports to **Jaeger** and **New Relic**.
 

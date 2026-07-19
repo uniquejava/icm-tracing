@@ -8,15 +8,15 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping
 @RestController
 @RequiredArgsConstructor
-public class HelloController {
+public class RequestController {
     private final WorkflowClientService workflowClientService;
 
-    @PostMapping("/hello")
-    public void hello(EventMessage eventMessage) {
+    @PostMapping("/request")
+    public void request(EventMessage eventMessage) {
         workflowClientService.start(eventMessage);
     }
 
-    @GetMapping("/approve")
+    @PostMapping("/approve")
     public void approve(@RequestParam("workflowId") String workflowId) {
         workflowClientService.approve(workflowId);
     }
