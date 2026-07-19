@@ -1,32 +1,57 @@
-## Environment
+# icm-tracing (`hitl`)
+
+**Human-in-the-loop**: child workflow waits on a Temporal signal; approve via HTTP.
+
+## Prerequisites
 
 - Java 21
 - Maven 3.9.x
-- Spring Boot 3.5.x
-- Temporal (Server 1.29.1, UI 2.42.1)
+- [Temporal CLI](https://docs.temporal.io/cli) (`temporal` on `PATH`)
+- Docker / Docker Compose
 
-Check the `screenshots` directory for known issues.
+check `screenshots/` for known issues.
+
+See the branch overview on [`main`](https://github.com/uniquejava/icm-tracing/tree/main#branches).
 
 ## Tracing
 
-- **OpenTelemetry**: The app exports traces via OTLP (gRPC) to New Relic (and optionally via the collector to Jaeger). HTTP server spans include `http.request.method` and `http.route` (OpenTelemetry semantic conventions).
-- **Collector** (`otel-collector.yml`): Receives OTLP, batches, and exports to Jaeger and New Relic.
+- App exports OTLP (gRPC) to the local collector (`localhost:4317`).
+- Collector fans out to **Jaeger** and **New Relic**.
+- HTTP server spans include `http.request.method` and `http.route`.
 
-## Up & Running
+## Configure secrets
 
 ```shell
-# Keys (required for New Relic export)
-export NR_ENDPOINT=https://otlp.nr-data.net:4317
-export MY_NEW_RELIC_API_KEY=your_api_key
-
-# Start Temporal server, OTel collector, and Jaeger
-./scripts/startup.sh
-
-# Run the app (or start from your IDE)
-mvn clean spring-boot:run
-
-# Trigger a workflow
-./scripts/01normal.sh
+cp .env.example .env
+# edit .env and set MY_NEW_RELIC_API_KEY to your New Relic ingest license key
 ```
 
-Traces are visible in Jaeger (http://localhost:16686) and, when configured, in New Relic.
+`.env` is gitignored. Docker Compose loads it automatically for the OTel collector (Jaeger + New Relic export).
+
+## Run locally
+
+```shell
+./scripts/startup.sh
+mvn clean spring-boot:run
+
+# start workflow — child blocks waiting for approval
+./scripts/01normal.sh
+
+# approve (use the child workflow id, usually <parentId>-child-001)
+./scripts/02approve.sh '<workflowId>'
+# e.g. ./scripts/02approve.sh '1-child-001'
+```
+
+## Where to look
+
+| UI | URL |
+|----|-----|
+| Temporal UI | http://localhost:8088 |
+| Jaeger | http://localhost:16686 |
+| App | http://localhost:8080 |
+
+## Shutdown
+
+```shell
+./scripts/shutdown.sh
+```
