@@ -1,6 +1,6 @@
 spring:
   application:
-    name: human-in-the-loop
+    name: heartbeat_hitl
   temporal:
     namespace: default
     connection:
