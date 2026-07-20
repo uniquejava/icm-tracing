@@ -15,15 +15,22 @@ exporters:
     endpoint: ${NR_ENDPOINT}
     headers:
       api-key: ${MY_NEW_RELIC_API_KEY}
+  datadog/exporter:
+    api:
+      site: ${DD_SITE}
+      key: ${DD_API_KEY}
   debug:
     verbosity: normal
 
 processors:
-  batch: {}
+  batch:
+    send_batch_max_size: 100
+    send_batch_size: 10
+    timeout: 10s
 
 service:
   pipelines:
     traces:
       receivers: [otlp]
       processors: [batch]
-      exporters: [otlp/jaeger, otlp/newrelic, debug]
+      exporters: [otlp/jaeger, otlp/newrelic, datadog/exporter, debug]
