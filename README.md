@@ -38,6 +38,7 @@ mvn clean spring-boot:run
 |----|-----|
 | Temporal UI | http://localhost:8088 |
 | Jaeger | http://localhost:16686 |
+| New Relic | https://one.newrelic.com/ |
 | Datadog APM | https://ap1.datadoghq.com/apm/traces |
 | App | http://localhost:8080 |
 
