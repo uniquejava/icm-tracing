@@ -17,10 +17,10 @@ See the branch overview on [`main`](https://github.com/uniquejava/icm-tracing/tr
 
 ```shell
 cp .env.example .env
-# edit .env and set MY_NEW_RELIC_API_KEY to your New Relic ingest license key
+# edit .env: MY_NEW_RELIC_API_KEY, DD_API_KEY (and DD_SITE if needed)
 ```
 
-`.env` is gitignored. Docker Compose loads it automatically for the OTel collector (Jaeger + New Relic export).
+`.env` is gitignored. Docker Compose loads it automatically for the OTel collector (Jaeger + New Relic + Datadog export).
 
 ## Run locally
 
@@ -38,6 +38,7 @@ mvn clean spring-boot:run
 |----|-----|
 | Temporal UI | http://localhost:8088 |
 | Jaeger | http://localhost:16686 |
+| Datadog APM | https://ap1.datadoghq.com/apm/traces |
 | App | http://localhost:8080 |
 
 ## Shutdown
