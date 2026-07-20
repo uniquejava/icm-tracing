@@ -23,4 +23,4 @@ There is currently no `src/test` tree; new behavior should include targeted unit
 Recent history favors short, imperative commits, often with Conventional Commit prefixes such as `fix:` and `feat:`. Keep commits scoped to one change. PRs should explain the behavioral impact, list validation steps (for example, `mvn test`, demo scripts run), and attach screenshots when trace output or UI behavior changes.
 
 ## Configuration & Observability Tips
-Do not commit secrets. Set `NR_ENDPOINT` and `MY_NEW_RELIC_API_KEY` in your shell before exporting traces to New Relic. Use Jaeger at `http://localhost:16686` and Temporal UI at `http://localhost:8088` to verify local tracing flows.
+Do not commit secrets. Set `NR_ENDPOINT`, `MY_NEW_RELIC_API_KEY`, `DD_SITE`, and `DD_API_KEY` in `.env` (or your shell) before exporting traces to New Relic / Datadog. Use Jaeger at `http://localhost:16686` and Temporal UI at `http://localhost:8088` to verify local tracing flows.
