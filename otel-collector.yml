@@ -15,6 +15,10 @@ exporters:
     endpoint: ${NR_ENDPOINT}
     headers:
       api-key: ${MY_NEW_RELIC_API_KEY}
+  datadog/exporter:
+    api:
+      site: ${DD_SITE}
+      key: ${DD_API_KEY}
   debug:
     verbosity: normal
 
@@ -26,7 +30,10 @@ processors:
         # Drop Temporal's StartActivity:RecordHeartbea and RunActivity:RecordHeartbeat so only custom "heartbeat" spans appear
         - 'name == "StartActivity:RecordHeartbeat"'
         - 'name == "RunActivity:RecordHeartbeat"'
-  batch: {}
+  batch:
+    send_batch_max_size: 100
+    send_batch_size: 10
+    timeout: 10s
 
 service:
   pipelines:
@@ -38,3 +45,7 @@ service:
       receivers: [otlp]
       processors: [filter/drop_temporal_heartbeat_activity, batch]
       exporters: [otlp/newrelic, debug]
+    traces/datadog:
+      receivers: [otlp]
+      processors: [filter/drop_temporal_heartbeat_activity, batch]
+      exporters: [datadog/exporter]
