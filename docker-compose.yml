@@ -7,6 +7,8 @@ services:
     environment:
       - NR_ENDPOINT
       - MY_NEW_RELIC_API_KEY
+      - DD_SITE
+      - DD_API_KEY
     volumes:
       - ./otel-collector.yml:/etc/otelcol-contrib/config.yaml
     command: [ "--config=/etc/otelcol-contrib/config.yaml" ]
