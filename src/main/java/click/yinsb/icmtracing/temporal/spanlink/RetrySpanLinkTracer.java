@@ -21,22 +21,24 @@ import java.util.function.Supplier;
 /**
  * Creates per-attempt spans for Temporal activity retries using OpenTelemetry Span Links.
  * <p>
- * Based on:
+ * Noise-reduction rules (vs linking every retry as a new root to all priors):
  * <ul>
- *   <li>New Relic: long-running workflows that exceed the ~90s trace session should
- *       connect later segments via Span Links (distinct segments, navigable previous/next)</li>
- *   <li>OTel Java: {@code setNoParent()} + {@code addLink(SpanContext)} starts a new root
- *       span in a new trace while preserving causal association</li>
- *   <li>Retry instrumentation pattern: each attempt is its own span; retries link back
- *       with {@code link.relationship=retry_of}</li>
+ *   <li>Stay in the current Temporal trace while the gap since the previous attempt is
+ *       under {@link #NEW_ROOT_AFTER_MS} (New Relic ~90s session budget)</li>
+ *   <li>Only {@code setNoParent()} + {@code addLink} when that gap is exceeded</li>
+ *   <li>Link only the immediate previous attempt ({@code retry_of}), not the full history</li>
  * </ul>
- * Temporal schedules retries outside the process, so attempt N cannot share a for-loop
- * with attempt 1; we persist prior SpanContexts in {@link RetryAttemptContextRegistry}.
  */
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class RetrySpanLinkTracer {
+
+    /**
+     * Start a new root (and Span Link) only after this idle gap since the previous attempt.
+     * Aligns with New Relic's ~90s trace-session behavior for long-running workflows.
+     */
+    static final long NEW_ROOT_AFTER_MS = 90_000L;
 
     private static final AttributeKey<String> LINK_RELATIONSHIP = AttributeKey.stringKey("link.relationship");
     private static final AttributeKey<Long> PREVIOUS_ATTEMPT = AttributeKey.longKey("previous.attempt_number");
@@ -47,8 +49,8 @@ public class RetrySpanLinkTracer {
     /**
      * Run {@code action} under an attempt span.
      * <ul>
-     *   <li>Attempt 1: child of the current Temporal {@code RunActivity} span (same trace)</li>
-     *   <li>Attempt N&gt;1: new root span ({@code setNoParent}) with links to all prior attempts</li>
+     *   <li>Short gap: child of the current Temporal {@code RunActivity} span (same trace)</li>
+     *   <li>Gap ≥ {@link #NEW_ROOT_AFTER_MS}: new root with a single link to the previous attempt</li>
      * </ul>
      */
     public <T> T runAttempt(
@@ -59,6 +61,13 @@ public class RetrySpanLinkTracer {
             Supplier<T> action) {
         Tracer tracer = openTelemetry.getTracer("retry_spanlink");
         List<RetryAttemptContext> previous = registry.getAll(registryKey);
+        RetryAttemptContext last = previous.isEmpty() ? null : previous.get(previous.size() - 1);
+
+        long now = System.currentTimeMillis();
+        long gapMs = last == null || last.getEndedAtEpochMs() <= 0
+                ? 0L
+                : Math.max(0L, now - last.getEndedAtEpochMs());
+        boolean startNewTrace = attempt > 1 && last != null && gapMs >= NEW_ROOT_AFTER_MS;
 
         var spanBuilder = tracer.spanBuilder("activity.retry.attempt")
                 .setSpanKind(SpanKind.INTERNAL)
@@ -66,26 +75,26 @@ public class RetrySpanLinkTracer {
                 .setAttribute("temporal.activity.type", activityType)
                 .setAttribute("retry.attempt_number", (long) attempt)
                 .setAttribute("retry.is_retry", attempt > 1)
-                .setAttribute("retry.previous_attempts", (long) previous.size());
+                .setAttribute("retry.previous_attempts", (long) previous.size())
+                .setAttribute("retry.gap_ms", gapMs)
+                .setAttribute("retry.new_trace", startNewTrace);
 
-        if (attempt > 1) {
-            // New Relic Span Links UI navigates across distinct traces — start a new root.
+        if (startNewTrace) {
             spanBuilder.setNoParent();
-            for (RetryAttemptContext prev : previous) {
-                SpanContext linked = toSpanContext(prev);
-                if (!linked.isValid()) {
-                    continue;
-                }
+            SpanContext linked = toSpanContext(last);
+            if (linked.isValid()) {
                 Attributes linkAttrs = Attributes.of(
                         LINK_RELATIONSHIP, "retry_of",
-                        PREVIOUS_ATTEMPT, (long) prev.getAttempt());
+                        PREVIOUS_ATTEMPT, (long) last.getAttempt());
                 spanBuilder.addLink(linked, linkAttrs);
-                log.info("span-link attempt={} -> prior attempt={} traceId={} spanId={}",
-                        attempt, prev.getAttempt(), prev.getTraceId(), prev.getSpanId());
+                log.info("span-link attempt={} -> prior attempt={} gapMs={} traceId={} spanId={}",
+                        attempt, last.getAttempt(), gapMs, last.getTraceId(), last.getSpanId());
             }
-            if (previous.isEmpty()) {
-                log.warn("retry attempt={} has no prior span contexts for key={}", attempt, registryKey);
-            }
+        } else if (attempt > 1 && last == null) {
+            log.warn("retry attempt={} has no prior span contexts for key={}", attempt, registryKey);
+        } else if (attempt > 1) {
+            log.info("same-trace attempt={} gapMs={} (threshold={}ms); skip setNoParent/addLink",
+                    attempt, gapMs, NEW_ROOT_AFTER_MS);
         }
 
         Span span = spanBuilder.startSpan();
@@ -133,7 +142,8 @@ public class RetrySpanLinkTracer {
             log.warn("skip remembering attempt={}: invalid span context", attempt);
             return;
         }
-        registry.append(registryKey, new RetryAttemptContext(attempt, ctx.getTraceId(), ctx.getSpanId()));
+        registry.append(registryKey, new RetryAttemptContext(
+                attempt, ctx.getTraceId(), ctx.getSpanId(), System.currentTimeMillis()));
         log.info("remembered attempt={} key={} traceId={} spanId={}",
                 attempt, registryKey, ctx.getTraceId(), ctx.getSpanId());
     }

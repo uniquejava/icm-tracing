@@ -15,6 +15,8 @@ public class RetryAttemptContext {
     private int attempt;
     private String traceId;
     private String spanId;
+    /** Wall-clock end of this attempt; used to decide whether the next retry needs a new trace. */
+    private long endedAtEpochMs;
 
     public boolean isValid() {
         return attempt > 0

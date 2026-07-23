@@ -34,7 +34,7 @@ mvn clean spring-boot:run
 ./scripts/01normal.sh
 ```
 
-Watch logs for `span-link attempt=N -> prior attempt=...`. In Jaeger / New Relic, open an `activity.retry.attempt` span (attempt ≥ 2) and inspect **Span links**.
+Early attempts (backoff &lt; ~90s) stay on the same trace. Later ones log `span-link attempt=N -> prior attempt=...` and open a new root with a **single** Span Link. In Jaeger / New Relic, open those later `activity.retry.attempt` spans and inspect **Span links**.
 
 ## Where to look
 
