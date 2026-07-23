@@ -1,6 +1,6 @@
 spring:
   application:
-    name: retry
+    name: retry_spanlink
   temporal:
     namespace: default
     connection:

@@ -1,6 +1,8 @@
-# icm-tracing (`retry`)
+# icm-tracing (`retry_spanlink`)
 
-Demonstrates **activity retry** shapes in OpenTelemetry traces.
+Demonstrates **Span Links** on Temporal activity retries (exponential backoff), so New Relic can navigate trace fragments after ~90s inactivity gaps.
+
+See [docs/why-spanlink-hard-with-retry.md](docs/why-spanlink-hard-with-retry.md) for why this is non-trivial under Temporal-owned retries.
 
 ## Prerequisites
 
@@ -28,9 +30,11 @@ cp .env.example .env
 ./scripts/startup.sh
 mvn clean spring-boot:run
 
-# trigger workflow — activity fails against :8081 and retries (more attempts than main)
+# trigger workflow — activity fails against :8081 and retries (12 attempts, exponential from 2s)
 ./scripts/01normal.sh
 ```
+
+Watch logs for `span-link attempt=N -> prior attempt=...`. In Jaeger / New Relic, open an `activity.retry.attempt` span (attempt ≥ 2) and inspect **Span links**.
 
 ## Where to look
 

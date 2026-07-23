@@ -16,7 +16,6 @@ public class ChildWorkflow001Impl implements ChildWorkflow001 {
 
 	private final Logger log = Workflow.getLogger(ChildWorkflow001.class.getName());
 
-	// Create an activity stub
 	private final Activity001 activity1 = Workflow.newActivityStub(Activity001.class,
 			ActivityOptions.newBuilder()
 					.setRetryOptions(
