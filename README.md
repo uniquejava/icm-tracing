@@ -19,6 +19,7 @@ Each branch is a Temporal + OpenTelemetry (New Relic) demo focused on one tracin
 |--------|----------------------|
 | [main](https://github.com/uniquejava/icm-tracing/tree/main) | Baseline: parent→child workflow + failing activity retries. No HITL / heartbeat / span link. |
 | [retry](https://github.com/uniquejava/icm-tracing/tree/retry) | Stronger **activity retry** (more attempts) so retry shapes are easy to see in traces. |
+| [retry_spanlink](https://github.com/uniquejava/icm-tracing/tree/retry_spanlink) | Same retries as `retry`, plus manual OTel **Span Links** across long backoff gaps. Write-up: [why Span Link is hard with Temporal retry](https://github.com/uniquejava/icm-tracing/blob/retry_spanlink/docs/why-spanlink-hard-with-retry.md). |
 | [hitl](https://github.com/uniquejava/icm-tracing/tree/hitl) | **Human-in-the-loop**: child waits on a signal; `POST /approve` unblocks it. No heartbeat / span link. |
 | [hitl_spanlink](https://github.com/uniquejava/icm-tracing/tree/hitl_spanlink) | Same HITL as `hitl`, plus an OTel **Span Link** from the approve request back to the waiting workflow span. |
 | [heartbeat_retry](https://github.com/uniquejava/icm-tracing/tree/heartbeat_retry) | HITL + periodic **heartbeat spans** (~80s) so New Relic does not split one long workflow into multiple traces. |
@@ -27,7 +28,7 @@ Each branch is a Temporal + OpenTelemetry (New Relic) demo focused on one tracin
 Conceptual relationship:
 
 ```
-main ──► retry                         (retries)
+main ──► retry ──► retry_spanlink      (retries → + span link; see docs on that branch)
   └──► hitl ──► hitl_spanlink          (approval → + span link)
          └──► heartbeat_hitl / heartbeat_retry  (approval → + heartbeat)
 ```
