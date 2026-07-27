@@ -1,41 +1,46 @@
 # Next steps — `adot-direct` (collector-less ADOT)
 
 > Full agent handoff: [AGENTS.md](../AGENTS.md).  
-> 中文摘要见下方。
+> Lab report: [lab-adot-direct.md](./lab-adot-direct.md) / [中文](./lab-adot-direct_zh.md).
 
 ## Status
 
 | Item | State |
 |------|--------|
 | Branch `adot-aws` (Collector path) | Done, pushed |
-| Branch `adot-direct` | Created from `adot-aws`; **implementation not started** |
+| Branch `adot-direct` | **Implemented** — ADOT Java Agent → X-Ray OTLP (no Collector) |
 | Goal | ADOT Java Agent → `https://xray.{region}.amazonaws.com/v1/traces` **without** local ADOT Collector |
 
-## New session prompt (paste)
+## Checklist
 
+- [x] `.gitignore` → `.tools/`
+- [x] Download `aws-opentelemetry-agent.jar` into `.tools/`
+- [x] Wire Temporal `OpenTelemetry` bean to agent (`GlobalOpenTelemetry`) / stop exporting to `:4317`
+- [x] Disable Micrometer OTLP to Collector
+- [x] `service.name=adot-direct`
+- [x] `scripts/startup-direct.sh` + `scripts/run-app-direct.sh`
+- [x] Run workflow; confirm `aws/spans` for `adot-direct`
+- [x] Docs `lab-adot-direct.md` + `_zh.md` + README
+- [x] Commit + push (no secrets)
+
+## Run
+
+```shell
+# Agent JAR (use local proxy if GitHub is slow):
+#   export https_proxy=http://127.0.0.1:7897
+mkdir -p .tools
+curl -fL -o .tools/aws-opentelemetry-agent.jar \
+  https://github.com/aws-observability/aws-otel-java-instrumentation/releases/latest/download/aws-opentelemetry-agent.jar
+
+./scripts/startup-direct.sh
+./scripts/run-app-direct.sh
+./scripts/01normal.sh
 ```
-Continue icm-tracing branch adot-direct. Read AGENTS.md and docs/next-steps-adot-direct.md.
-Implement and validate collector-less ADOT Java Agent → AWS X-Ray OTLP endpoint.
-Do not commit AWS account IDs. Prefer completing the checklist in AGENTS.md end-to-end.
-```
-
-## Checklist (copy)
-
-- [ ] `.gitignore` → `.tools/`
-- [ ] Download `aws-opentelemetry-agent.jar` into `.tools/`
-- [ ] Wire Temporal `OpenTelemetry` bean to agent (`GlobalOpenTelemetry`) / stop exporting to `:4317`
-- [ ] Disable Micrometer OTLP to Collector
-- [ ] `service.name=adot-direct`
-- [ ] `scripts/startup-direct.sh` + `scripts/run-app-direct.sh`
-- [ ] Run workflow; confirm `aws/spans` for `adot-direct`
-- [ ] Docs `lab-adot-direct.md` + `_zh.md` + README
-- [ ] Commit + push (no secrets)
 
 ---
 
 ## 中文摘要
 
-上一轮在 `adot-aws` 已验证：**应用 → ADOT Collector → CloudWatch/X-Ray**。  
-官方还支持 **无 Collector**：ADOT Java Agent 直连  
-`https://xray.<region>.amazonaws.com/v1/traces`（SigV4）。  
-分支 `adot-direct` 已建好，**代码尚未改**。新 session 请读根目录 `AGENTS.md`，按清单实现并验证后提交。
+`adot-direct` 已实现官方 **无 Collector** 路径：ADOT Java Agent 直连
+`https://xray.<region>.amazonaws.com/v1/traces`（SigV4）。详见 `lab-adot-direct_zh.md`。
+下载 Agent JAR 若 GitHub 慢，可用本地代理（如 `https_proxy=http://127.0.0.1:7897`）。

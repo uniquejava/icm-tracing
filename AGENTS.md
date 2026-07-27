@@ -8,13 +8,13 @@ Public GitHub repo. **Never commit AWS account IDs, ARNs, emails, access keys, o
 |--------|--------|---------|
 | `main` + feature branches (`retry`, `hitl`, …) | Done | Temporal + OTel → Jaeger / New Relic / Datadog |
 | [`adot-aws`](https://github.com/uniquejava/icm-tracing/tree/adot-aws) | **Done / pushed** | Temporal → **ADOT Collector** → X-Ray / CloudWatch EMF + custom CW dashboard |
-| `adot-direct` | **In progress — start here** | Validate **collector-less** ADOT Java Agent → AWS managed OTLP endpoints |
+| [`adot-direct`](https://github.com/uniquejava/icm-tracing/tree/adot-direct) | **Done** | Validate **collector-less** ADOT Java Agent → AWS managed OTLP endpoints |
 
-Current checkout should be `adot-direct` (created from `adot-aws`, no extra commits yet).
+Lab report: `docs/lab-adot-direct.md` / `_zh.md`. Run: `./scripts/startup-direct.sh` + `./scripts/run-app-direct.sh`.
 
 ---
 
-## Next session: finish `adot-direct` (collector-less)
+## Reference: `adot-direct` (collector-less) checklist
 
 ### Goal
 

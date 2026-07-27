@@ -1,52 +1,50 @@
-# icm-tracing — `adot-aws` lab
+# icm-tracing — `adot-direct` lab
 
-Validate: **Temporal traces + metrics → ADOT Collector → AWS X-Ray / CloudWatch**.
+Validate: **Temporal traces → ADOT Java Agent → AWS X-Ray OTLP** (no local Collector).
 
-中文版：[README_zh.md](./README_zh.md) · Lab 报告：[docs/lab-adot-aws.md](docs/lab-adot-aws.md) / [中文](docs/lab-adot-aws_zh.md)
+中文版：[README_zh.md](./README_zh.md) · Lab 报告：[docs/lab-adot-direct.md](docs/lab-adot-direct.md) / [中文](docs/lab-adot-direct_zh.md)
 
-**Next (collector-less):** branch `adot-direct` — see [AGENTS.md](./AGENTS.md) and [docs/next-steps-adot-direct.md](docs/next-steps-adot-direct.md).
+**Collector path (contrast):** branch [`adot-aws`](https://github.com/uniquejava/icm-tracing/tree/adot-aws) — [docs/lab-adot-aws.md](docs/lab-adot-aws.md).
 
-This branch answers the assessment / ADR question for Option B: can a non-AgentCore
-platform component (Temporal Java worker) ship telemetry to AWS via ADOT?
+This branch answers the same assessment / ADR Option B question as `adot-aws`, using AWS’s
+**collector-less** path: ADOT Agent signs OTLP with SigV4 to
+`https://xray.{region}.amazonaws.com/v1/traces`.
 
 | Document | Relevance |
 |----------|-----------|
-| Observability backend assessment | Option B claims external/platform runtimes use ADOT → CloudWatch |
-| ADR-011 (hybrid CW + NR) | This lab proves the CW path for Temporal |
-| [AWS blog — AgentCore Observability](https://aws.amazon.com/blogs/machine-learning/build-trustworthy-ai-agents-with-amazon-bedrock-agentcore-observability/) | Same ADOT→CloudWatch idea, but GenAI/AgentCore-focused (Python `aws-opentelemetry-distro`) |
+| Observability backend assessment | Option B — external/platform runtimes → CloudWatch via ADOT |
+| ADR-011 (hybrid CW + NR) | Proves CW path for Temporal **without** a sidecar Collector |
+| [CloudWatch — collector-less ADOT](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-OTLP-UsingADOT.html) | Official Java agent → managed OTLP endpoints |
 
 ## Short answer
 
-**Yes** for Temporal → X-Ray ingest (traces) and CloudWatch Metrics via EMF (metrics).
+**Yes** for Temporal → X-Ray ingest (spans in **`aws/spans`** when Transaction Search is on).
 
 **Caveats**
 
-1. The blog’s **GenAI Observability** dashboard expects GenAI semantic conventions.
-   Temporal spans show as workflow/activity traces (X-Ray / Transaction Search),
-   **not** as AgentCore GenAI sessions.
-2. If the account’s X-Ray trace destination is **CloudWatchLogs** (Transaction Search),
-   traces appear in log group **`aws/spans`**. Legacy `aws xray get-trace-summaries`
-   may return empty — that is not a failed export.
-3. The ADOT collector image does not use SSO profiles from a mounted `~/.aws` reliably.
-   `./scripts/startup.sh` injects short-lived session keys via
-   `aws configure export-credentials`.
-4. `service.name` is **`adot-aws`** (matches this branch), from `spring.application.name`.
+1. Vanilla OpenTelemetry Java → X-Ray OTLP returns **403** (needs SigV4). Use ADOT Agent
+   (≥ 2.11.2), not plain `OtlpHttpSpanExporter`.
+2. Do **not** also export to a local Collector (`:4317`). `OtelConfig` exposes
+   `GlobalOpenTelemetry.get()` so Temporal Spring Boot shares the agent’s SDK.
+3. Metrics are **off** in this lab (`OTEL_METRICS_EXPORTER=none`). See `adot-aws` for EMF.
+4. If X-Ray destination is **CloudWatchLogs**, prefer `aws/spans` / Transaction Search —
+   empty `get-trace-summaries` is not a failed export.
+5. `service.name` is **`adot-direct`** (matches this branch).
 
 ```
-Java app (Temporal + Micrometer/OTel)  service.name=adot-aws
-        │  OTLP :4317 traces / :4318 metrics
+Java app + ADOT Java Agent   service.name=adot-direct
+        │  OTLP HTTP/protobuf + SigV4
         ▼
-ADOT Collector
-        ├─ awsxray  → X-Ray (→ aws/spans when Transaction Search is on)
-        ├─ awsemf   → CloudWatch Logs → Metrics (namespace ICMTracing/adot-aws)
-        └─ otlp     → local Jaeger (dual-view)
+https://xray.{region}.amazonaws.com/v1/traces
+        ▼
+aws/spans (Transaction Search)
 ```
 
 ## Prerequisites
 
-- Java 25, Maven 3.9.x, Temporal CLI, Docker Compose (Colima/Docker)
-- Host AWS profile that can call `xray:PutTraceSegments` and write CloudWatch Logs
-  (session exportable with `aws configure export-credentials`)
+- Java 25, Maven 3.9.x, Temporal CLI
+- Host AWS profile with `xray:PutTraceSegments` (+ Logs on `aws/spans`)
+- ADOT agent JAR under `.tools/` (see below) — **no Docker Collector**
 
 ## Configure
 
@@ -54,47 +52,42 @@ ADOT Collector
 cp .env.example .env
 # set AWS_REGION / AWS_PROFILE for your lab credentials
 aws sts get-caller-identity
+
+mkdir -p .tools
+curl -fL -o .tools/aws-opentelemetry-agent.jar \
+  https://github.com/aws-observability/aws-otel-java-instrumentation/releases/latest/download/aws-opentelemetry-agent.jar
 ```
 
 ## Run the lab
 
 ```shell
-# 1) Temporal + ADOT (exports session keys into the collector) + Jaeger
-./scripts/startup.sh
+# 1) Temporal only
+./scripts/startup-direct.sh
 
-# 2) app (JDK 25 needs annotation processing for Lombok)
-JAVA_HOME=$(/usr/libexec/java_home -v 25) mvn spring-boot:run -Dmaven.compiler.proc=full
+# 2) app + ADOT agent (session keys + OTEL_* for X-Ray)
+./scripts/run-app-direct.sh
 
 # 3) trigger workflow (activity hits failing :8081 → retries in the trace)
 ./scripts/01normal.sh
 ```
 
-Session keys expire — re-run `./scripts/startup.sh` after SSO refresh.
-
-```shell
-docker compose logs -f otel-collector
-```
+Session keys expire — re-run `./scripts/run-app-direct.sh` after SSO refresh.
 
 ## Where to look
 
 | UI | URL / location |
 |----|----------------|
 | Temporal UI | http://localhost:8088 |
-| Jaeger (local dual-view) | http://localhost:16686 service **`adot-aws`** |
-| Traces in AWS | CloudWatch Transaction Search / `aws/spans` — filter service **`adot-aws`** |
-| CloudWatch Metrics | Namespace `ICMTracing/Temporal` (`application=main`), log group `/icm-tracing/otel/metrics` |
-| CloudWatch Dashboard | `./scripts/put-dashboard.sh` → [adot-aws-lab](https://eu-west-1.console.aws.amazon.com/cloudwatch/home?region=eu-west-1#dashboards:name=adot-aws-lab) |
-| ADOT health | http://localhost:13133 |
-
-Example CloudWatch trace (map + Temporal spans): see [docs/lab-adot-aws.md](docs/lab-adot-aws.md) or screenshot [`screenshots/05xray-traces.png`](screenshots/05xray-traces.png).
+| Traces in AWS | CloudWatch Transaction Search / `aws/spans` — filter service **`adot-direct`** |
 
 ## Shutdown
 
-```shell
-./scripts/shutdown.sh
-```
+Stop the Spring Boot process (Ctrl+C). Temporal: stop the `temporal server start-dev` process if you started it via the script. No `docker compose down` required for this lab’s export path.
 
 ## Relation to other branches
 
-Other branches demo NR/Datadog/Jaeger shapes (retry, HITL, heartbeat, span links).
-This branch swaps the **backend path** to ADOT→AWS while keeping the same Temporal sample.
+| Branch | Path |
+|--------|------|
+| `adot-aws` | App → ADOT **Collector** → X-Ray / EMF + Jaeger |
+| **`adot-direct` (this)** | App + ADOT **Java Agent** → X-Ray OTLP (no Collector) |
+| `main` / `retry` / `hitl` / … | Temporal demos → Jaeger / New Relic / Datadog |
