@@ -1,73 +1,98 @@
-# icm-tracing
+# icm-tracing — `adot-aws` lab
 
-Temporal + OpenTelemetry tracing demos (local Jaeger and New Relic).
+Validate: **Temporal traces + metrics → ADOT Collector → AWS X-Ray / CloudWatch**.
+
+中文版：[README_zh.md](./README_zh.md) · Lab 报告：[docs/lab-adot-aws.md](docs/lab-adot-aws.md) / [中文](docs/lab-adot-aws_zh.md)
+
+This branch answers the assessment / ADR question for Option B: can a non-AgentCore
+platform component (Temporal Java worker) ship telemetry to AWS via ADOT?
+
+| Document | Relevance |
+|----------|-----------|
+| Observability backend assessment | Option B claims external/platform runtimes use ADOT → CloudWatch |
+| ADR-011 (hybrid CW + NR) | This lab proves the CW path for Temporal |
+| [AWS blog — AgentCore Observability](https://aws.amazon.com/blogs/machine-learning/build-trustworthy-ai-agents-with-amazon-bedrock-agentcore-observability/) | Same ADOT→CloudWatch idea, but GenAI/AgentCore-focused (Python `aws-opentelemetry-distro`) |
+
+## Short answer
+
+**Yes** for Temporal → X-Ray ingest (traces) and CloudWatch Metrics via EMF (metrics).
+
+**Caveats**
+
+1. The blog’s **GenAI Observability** dashboard expects GenAI semantic conventions.
+   Temporal spans show as workflow/activity traces (X-Ray / Transaction Search),
+   **not** as AgentCore GenAI sessions.
+2. If the account’s X-Ray trace destination is **CloudWatchLogs** (Transaction Search),
+   traces appear in log group **`aws/spans`**. Legacy `aws xray get-trace-summaries`
+   may return empty — that is not a failed export.
+3. The ADOT collector image does not use SSO profiles from a mounted `~/.aws` reliably.
+   `./scripts/startup.sh` injects short-lived session keys via
+   `aws configure export-credentials`.
+4. `service.name` is **`adot-aws`** (matches this branch), from `spring.application.name`.
+
+```
+Java app (Temporal + Micrometer/OTel)  service.name=adot-aws
+        │  OTLP :4317 traces / :4318 metrics
+        ▼
+ADOT Collector
+        ├─ awsxray  → X-Ray (→ aws/spans when Transaction Search is on)
+        ├─ awsemf   → CloudWatch Logs → Metrics (namespace ICMTracing/adot-aws)
+        └─ otlp     → local Jaeger (dual-view)
+```
 
 ## Prerequisites
 
-- Java 25
-- Maven 3.9.x
-- [Temporal CLI](https://docs.temporal.io/cli) (`temporal` on `PATH`)
-- Docker / Docker Compose
+- Java 25, Maven 3.9.x, Temporal CLI, Docker Compose (Colima/Docker)
+- Host AWS profile that can call `xray:PutTraceSegments` and write CloudWatch Logs
+  (session exportable with `aws configure export-credentials`)
 
-check `screenshots/` for known issues.
-
-## Branches
-
-Each branch is a Temporal + OpenTelemetry (New Relic) demo focused on one tracing concern:
-
-| Branch | What it demonstrates |
-|--------|----------------------|
-| [main](https://github.com/uniquejava/icm-tracing/tree/main) | Baseline: parent→child workflow + failing activity retries. No HITL / heartbeat / span link. |
-| [retry](https://github.com/uniquejava/icm-tracing/tree/retry) | Stronger **activity retry** (more attempts) so retry shapes are easy to see in traces. |
-| [retry_spanlink](https://github.com/uniquejava/icm-tracing/tree/retry_spanlink) | Same retries as `retry`, plus manual OTel **Span Links** across long backoff gaps. Write-up: [why Span Link is hard with Temporal retry](https://github.com/uniquejava/icm-tracing/blob/retry_spanlink/docs/why-spanlink-hard-with-retry.md). |
-| [hitl](https://github.com/uniquejava/icm-tracing/tree/hitl) | **Human-in-the-loop**: child waits on a signal; `POST /approve` unblocks it. No heartbeat / span link. |
-| [hitl_spanlink](https://github.com/uniquejava/icm-tracing/tree/hitl_spanlink) | Same HITL as `hitl`, plus an OTel **Span Link** from the approve request back to the waiting workflow span. |
-| [heartbeat_retry](https://github.com/uniquejava/icm-tracing/tree/heartbeat_retry) | HITL + periodic **heartbeat spans** (~80s) so New Relic does not split one long workflow into multiple traces. |
-| [heartbeat_hitl](https://github.com/uniquejava/icm-tracing/tree/heartbeat_hitl) | Same HITL + heartbeat idea as `heartbeat_retry`; approve typically uses the **child** workflow id. |
-
-Conceptual relationship:
-
-```
-main ──► retry ──► retry_spanlink      (retries → + span link; see docs on that branch)
-  └──► hitl ──► hitl_spanlink          (approval → + span link)
-         └──► heartbeat_hitl / heartbeat_retry  (approval → + heartbeat)
-```
-
-## Configure secrets
+## Configure
 
 ```shell
 cp .env.example .env
-# edit .env: MY_NEW_RELIC_API_KEY, DD_API_KEY (and DD_SITE if needed)
+# set AWS_REGION / AWS_PROFILE for your lab credentials
+aws sts get-caller-identity
 ```
 
-`.env` is gitignored. Docker Compose loads it automatically for the OTel collector (Jaeger + New Relic + Datadog export).
-
-## Run locally (this branch: `main`)
+## Run the lab
 
 ```shell
-# 1) infra: Temporal dev server + OTel collector + Jaeger
+# 1) Temporal + ADOT (exports session keys into the collector) + Jaeger
 ./scripts/startup.sh
 
-# 2) app
-mvn clean spring-boot:run
+# 2) app (JDK 25 needs annotation processing for Lombok)
+JAVA_HOME=$(/usr/libexec/java_home -v 25) mvn spring-boot:run -Dmaven.compiler.proc=full
 
-# 3) trigger a workflow (activity calls a failing :8081 endpoint → retries)
+# 3) trigger workflow (activity hits failing :8081 → retries in the trace)
 ./scripts/01normal.sh
+```
+
+Session keys expire — re-run `./scripts/startup.sh` after SSO refresh.
+
+```shell
+docker compose logs -f otel-collector
 ```
 
 ## Where to look
 
-| UI | URL |
-|----|-----|
+| UI | URL / location |
+|----|----------------|
 | Temporal UI | http://localhost:8088 |
-| Jaeger | http://localhost:16686 |
-| New Relic | https://one.newrelic.com/ |
-| Datadog APM | https://ap1.datadoghq.com/apm/traces |
-| App | http://localhost:8080 |
+| Jaeger (local dual-view) | http://localhost:16686 service **`adot-aws`** |
+| Traces in AWS | CloudWatch Transaction Search / `aws/spans` — filter service **`adot-aws`** |
+| CloudWatch Metrics | Namespace `ICMTracing/Temporal` (`application=main`), log group `/icm-tracing/otel/metrics` |
+| CloudWatch Dashboard | `./scripts/put-dashboard.sh` → [adot-aws-lab](https://eu-west-1.console.aws.amazon.com/cloudwatch/home?region=eu-west-1#dashboards:name=adot-aws-lab) |
+| ADOT health | http://localhost:13133 |
+
+Example CloudWatch trace (map + Temporal spans): see [docs/lab-adot-aws.md](docs/lab-adot-aws.md) or screenshot [`screenshots/05xray-traces.png`](screenshots/05xray-traces.png).
 
 ## Shutdown
 
 ```shell
 ./scripts/shutdown.sh
-# also stop the Temporal dev server if still running (e.g. kill the nohup process)
 ```
+
+## Relation to other branches
+
+Other branches demo NR/Datadog/Jaeger shapes (retry, HITL, heartbeat, span links).
+This branch swaps the **backend path** to ADOT→AWS while keeping the same Temporal sample.

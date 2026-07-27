@@ -1,0 +1,209 @@
+{
+  "widgets": [
+    {
+      "type": "text",
+      "x": 0,
+      "y": 0,
+      "width": 24,
+      "height": 2,
+      "properties": {
+        "markdown": "## adot-aws lab — CloudWatch metrics\nNamespace **`ICMTracing/Temporal`**, application / service **`main`** (data from the lab run before renaming `service.name`). Traces: Transaction Search / `aws/spans`."
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 2,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "title": "HTTP server requests (main)",
+        "region": "eu-west-1",
+        "period": 60,
+        "stat": "Sum",
+        "view": "timeSeries",
+        "stacked": false,
+        "yAxis": { "left": { "label": "count", "min": 0 } },
+        "metrics": [
+          [
+            {
+              "expression": "SEARCH('{ICMTracing/Temporal,exception,method,application,error,lab,uri,outcome,status} application=\"main\" MetricName=\"http.server.requests\"', 'Sum', 60)",
+              "id": "http_req",
+              "label": "http.server.requests",
+              "region": "eu-west-1"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "type": "metric",
+      "x": 12,
+      "y": 2,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "title": "Temporal activity failures (main)",
+        "region": "eu-west-1",
+        "period": 60,
+        "stat": "Sum",
+        "view": "timeSeries",
+        "stacked": false,
+        "yAxis": { "left": { "label": "count", "min": 0 } },
+        "metrics": [
+          [
+            {
+              "expression": "SEARCH('{ICMTracing/Temporal,exception,status_code,application,task_queue,worker_type,activity_type,namespace,signal_name,query_type,workflow_type,lab,operation} application=\"main\" MetricName=\"temporal_activity_execution_failed\"', 'Sum', 60)",
+              "id": "act_fail",
+              "label": "temporal_activity_execution_failed",
+              "region": "eu-west-1"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 8,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "title": "Temporal activity latency (main)",
+        "region": "eu-west-1",
+        "period": 60,
+        "stat": "Average",
+        "view": "timeSeries",
+        "stacked": false,
+        "yAxis": { "left": { "label": "ms", "min": 0 } },
+        "metrics": [
+          [
+            {
+              "expression": "SEARCH('{ICMTracing/Temporal,exception,status_code,application,task_queue,worker_type,activity_type,namespace,signal_name,query_type,workflow_type,lab,operation} application=\"main\" MetricName=\"temporal_activity_execution_latency\"', 'Average', 60)",
+              "id": "act_lat",
+              "label": "activity_execution_latency",
+              "region": "eu-west-1"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "type": "metric",
+      "x": 12,
+      "y": 8,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "title": "Temporal client requests (main)",
+        "region": "eu-west-1",
+        "period": 60,
+        "stat": "Sum",
+        "view": "timeSeries",
+        "stacked": false,
+        "yAxis": { "left": { "label": "count", "min": 0 } },
+        "metrics": [
+          [
+            {
+              "expression": "SEARCH('{ICMTracing/Temporal,exception,status_code,application,task_queue,worker_type,activity_type,namespace,signal_name,query_type,workflow_type,lab,operation} application=\"main\" MetricName=\"temporal_request\"', 'Sum', 60)",
+              "id": "t_req",
+              "label": "temporal_request",
+              "region": "eu-west-1"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 14,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "JVM memory used (main)",
+        "region": "eu-west-1",
+        "period": 60,
+        "stat": "Average",
+        "view": "timeSeries",
+        "stacked": false,
+        "yAxis": { "left": { "label": "bytes", "min": 0 } },
+        "metrics": [
+          [
+            {
+              "expression": "SEARCH('{ICMTracing/Temporal,area,application,id,lab} application=\"main\" MetricName=\"jvm.memory.used\"', 'Average', 60)",
+              "id": "jvm_mem",
+              "label": "jvm.memory.used",
+              "region": "eu-west-1"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "type": "metric",
+      "x": 8,
+      "y": 14,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "Process CPU (main)",
+        "region": "eu-west-1",
+        "period": 60,
+        "stat": "Average",
+        "view": "timeSeries",
+        "stacked": false,
+        "yAxis": { "left": { "label": "ratio", "min": 0, "max": 1 } },
+        "metrics": [
+          [
+            {
+              "expression": "SEARCH('{ICMTracing/Temporal,application,lab} application=\"main\" MetricName=\"process.cpu.usage\"', 'Average', 60)",
+              "id": "cpu",
+              "label": "process.cpu.usage",
+              "region": "eu-west-1"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "type": "metric",
+      "x": 16,
+      "y": 14,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "Temporal request latency (main)",
+        "region": "eu-west-1",
+        "period": 60,
+        "stat": "Average",
+        "view": "timeSeries",
+        "stacked": false,
+        "yAxis": { "left": { "label": "ms", "min": 0 } },
+        "metrics": [
+          [
+            {
+              "expression": "SEARCH('{ICMTracing/Temporal,exception,status_code,application,task_queue,worker_type,activity_type,namespace,signal_name,query_type,workflow_type,lab,operation} application=\"main\" MetricName=\"temporal_request_latency\"', 'Average', 60)",
+              "id": "t_lat",
+              "label": "temporal_request_latency",
+              "region": "eu-west-1"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "type": "log",
+      "x": 0,
+      "y": 20,
+      "width": 24,
+      "height": 6,
+      "properties": {
+        "title": "Recent spans (aws/spans, service main)",
+        "region": "eu-west-1",
+        "view": "table",
+        "query": "SOURCE 'aws/spans'\n| fields @timestamp, name, durationNano, attributes.method, attributes.uri, attributes.outcome\n| filter resource.attributes.service.name = \"main\" or isempty(resource.attributes.service.name)\n| sort @timestamp desc\n| limit 20"
+      }
+    }
+  ]
+}

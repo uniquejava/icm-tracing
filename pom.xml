@@ -38,16 +38,22 @@
             <version>1.33.0</version>
         </dependency>
 
-        <!-- api & sdk -->
+        <!-- traces: Micrometer Observation ↔ OpenTelemetry -->
         <dependency>
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-tracing-bridge-otel</artifactId>
         </dependency>
 
-        <!-- exporter -->
+        <!-- traces exporter (OTLP gRPC → local ADOT collector) -->
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-exporter-otlp</artifactId>
+        </dependency>
+
+        <!-- metrics: Temporal/Spring Micrometer → OTLP → ADOT → CloudWatch EMF -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-otlp</artifactId>
         </dependency>
 
         <dependency>

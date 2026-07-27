@@ -1,3 +1,16 @@
+# ADOT Collector config: Temporal/app OTLP → AWS X-Ray + CloudWatch (EMF) + local Jaeger
+#
+# Lab goal: validate Assessment Option B claim that platform components
+# (Temporal) can ship traces/metrics to AWS via ADOT — independent of the
+# AgentCore GenAI Observability path in the AWS blog (Python ADOT distro).
+#
+# Region is literal on purpose: ADOT image config expansion of ${AWS_REGION}
+# was unreliable in this lab. Keep in sync with AWS_REGION in .env / startup.sh.
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+
 receivers:
   otlp:
     protocols:
@@ -6,31 +19,50 @@ receivers:
       http:
         endpoint: 0.0.0.0:4318
 
+processors:
+  batch/traces:
+    timeout: 1s
+    send_batch_size: 50
+  batch/metrics:
+    timeout: 30s
+  resourcedetection:
+    detectors: [env, system]
+    timeout: 2s
+
 exporters:
+  # Traces → X-Ray PutTraceSegments. When the account's X-Ray destination is
+  # CloudWatchLogs (Transaction Search), spans land in log group aws/spans —
+  # aws xray get-trace-summaries may stay empty; that is expected.
+  awsxray:
+    region: eu-west-1
+
+  # Metrics → CloudWatch via Embedded Metric Format
+  awsemf:
+    region: eu-west-1
+    namespace: ICMTracing/Temporal
+    log_group_name: /icm-tracing/otel/metrics
+    dimension_rollup_option: NoDimensionRollup
+
+  # Local dual-view (optional, no AWS needed)
   otlp/jaeger:
     endpoint: jaeger:4317
     tls:
       insecure: true
-  otlp/newrelic:
-    endpoint: ${NR_ENDPOINT}
-    headers:
-      api-key: ${MY_NEW_RELIC_API_KEY}
-  datadog/exporter:
-    api:
-      site: ${DD_SITE}
-      key: ${DD_API_KEY}
-  debug:
-    verbosity: normal
 
-processors:
-  batch:
-    send_batch_max_size: 100
-    send_batch_size: 10
-    timeout: 10s
+  debug:
+    verbosity: basic
 
 service:
+  extensions: [health_check]
+  telemetry:
+    logs:
+      level: info
   pipelines:
     traces:
       receivers: [otlp]
-      processors: [batch]
-      exporters: [otlp/jaeger, otlp/newrelic, datadog/exporter, debug]
+      processors: [resourcedetection, batch/traces]
+      exporters: [awsxray, otlp/jaeger, debug]
+    metrics:
+      receivers: [otlp]
+      processors: [resourcedetection, batch/metrics]
+      exporters: [awsemf, debug]
