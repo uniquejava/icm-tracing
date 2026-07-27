@@ -4,6 +4,8 @@ Validate: **Temporal traces + metrics → ADOT Collector → AWS X-Ray / CloudWa
 
 中文版：[README_zh.md](./README_zh.md) · Lab 报告：[docs/lab-adot-aws.md](docs/lab-adot-aws.md) / [中文](docs/lab-adot-aws_zh.md)
 
+**Next (collector-less):** branch `adot-direct` — see [AGENTS.md](./AGENTS.md) and [docs/next-steps-adot-direct.md](docs/next-steps-adot-direct.md).
+
 This branch answers the assessment / ADR question for Option B: can a non-AgentCore
 platform component (Temporal Java worker) ship telemetry to AWS via ADOT?
 

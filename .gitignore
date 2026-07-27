@@ -36,3 +36,7 @@ nohup.out
 ### Local / secrets ###
 .DS_Store
 .env
+
+### Local tooling / large binaries ###
+.tools/
+aws-opentelemetry-agent.jar
